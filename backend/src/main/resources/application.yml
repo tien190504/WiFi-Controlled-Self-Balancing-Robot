@@ -1,0 +1,49 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: balance-robot-api
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/balance_robot}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres123}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+# JWT
+jwt:
+  secret: BalanceRobotSuperSecretKey2024MustBeAtLeast256BitsLong!!
+  expiration: 86400000  # 24 hours in ms
+
+# MQTT
+mqtt:
+  broker:
+    url: ${MQTT_BROKER_URL:tcp://localhost:1883}
+  client:
+    id: balance-robot-api
+  topics:
+    state-angle: robot/state/angle
+    state-sensors: robot/state/sensors
+    state-speed: robot/state/speed
+    pid-angle: robot/pid/angle
+    pid-speed: robot/pid/speed
+    control-move: robot/control/move
+
+# Swagger
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method

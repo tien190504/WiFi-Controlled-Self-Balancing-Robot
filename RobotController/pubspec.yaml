@@ -1,0 +1,27 @@
+name: robot_controller
+description: "Self-Balancing Robot Controller"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  mqtt_client: ^10.6.0
+  sensors_plus: ^6.1.1
+  csv: ^6.0.0
+  path_provider: ^2.1.5
+  google_fonts: ^6.2.1
+  http: ^1.6.0
+  shared_preferences: ^2.5.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
