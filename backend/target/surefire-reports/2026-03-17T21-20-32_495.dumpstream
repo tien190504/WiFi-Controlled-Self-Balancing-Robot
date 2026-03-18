@@ -1,0 +1,5 @@
+# Created at 2026-03-17T21:20:32.826
+Boot Manifest-JAR contains absolute paths in classpath 'D:\Balance_robot\backend\target\test-classes'
+Hint: <argLine>-Djdk.net.URLClassPath.disableClassPathURLCheck=true</argLine>
+'other' has different root
+

@@ -1,2 +1,3 @@
+com\balancerobot\mqtt\MqttBridgeTest.class
 com\balancerobot\service\PidProfileServiceTest.class
 com\balancerobot\service\MqttPublishServiceTest.class

@@ -3,8 +3,7 @@
 ## Overview
 
 `Balance Robot` is a real-time monitoring and control project for a self-balancing robot.
-The system includes a Flutter mobile app, a Spring Boot backend, an MQTT broker for
-real-time messaging, and PostgreSQL for storing users, devices, telemetry, and PID settings.
+The system includes a Flutter mobile app, a Spring Boot backend, an MQTT broker, an ESP32 firmware project, and PostgreSQL for storing users, devices, telemetry, and PID settings.
 
 The project is designed to provide:
 
@@ -12,7 +11,7 @@ The project is designed to provide:
 - robot management per account
 - real-time robot status updates through MQTT
 - mobile-based robot control with multiple control modes
-- PID persistence and synchronization per `deviceId` so settings remain available across devices
+- PID persistence and synchronization per `deviceId`
 
 ---
 
@@ -48,11 +47,21 @@ Mosquitto is used to exchange real-time data between the robot, backend, and mob
 
 Main MQTT flows:
 
-- telemetry from robot to server/app
+- telemetry from robot to backend and mobile
 - control commands from app to robot
 - PID parameters published to the correct topic for each robot
 
-### 4. PostgreSQL
+### 4. Firmware `Iot_robot`
+
+The ESP32 DevKit V1 firmware is responsible for:
+
+- Wi-Fi + MQTT connectivity
+- MPU6050 reading with a complementary filter
+- self-balancing control loop using angle PID
+- A4988 motor driver output for both motors
+- telemetry, heartbeat, and device event publishing
+
+### 5. PostgreSQL
 
 The database stores:
 
@@ -84,6 +93,13 @@ The database stores:
 - SharedPreferences
 - Google Fonts
 
+### Firmware
+
+- ESP-IDF
+- ESP32 DevKit V1
+- MPU6050
+- A4988
+
 ### Infrastructure
 
 - Docker
@@ -94,14 +110,13 @@ The database stores:
 
 ## High-Level Architecture
 
-Main system flow:
-
 1. The user logs in from the Flutter app.
 2. The app calls REST APIs for authentication and device data.
 3. The app connects to MQTT to receive real-time robot status.
-4. The backend listens to MQTT messages from the robot, updates state, and stores telemetry.
-5. When the user changes PID values, the app autosaves them to the backend by `deviceId`.
-6. When the user presses `SEND`, the app publishes the current PID values to the MQTT topics for that robot.
+4. The ESP32 publishes state, heartbeat, and events via MQTT.
+5. The backend listens to MQTT messages, updates device presence, and stores complete telemetry from `robot/state/full/{deviceId}`.
+6. When the user changes PID values, the app autosaves them to the backend by `deviceId`.
+7. When the user presses `SEND`, the app publishes the current PID values to the MQTT topics for that robot.
 
 ---
 
@@ -110,9 +125,10 @@ Main system flow:
 ```text
 Balance_robot/
 |-- backend/                # Spring Boot backend + Docker Compose
+|-- Iot_robot/              # ESP32 DevKit V1 firmware (ESP-IDF)
 |-- RobotController/        # Flutter mobile application
 |-- TESTING_GUIDE.md        # System testing guide
-|-- BAO_CAO_50_PHAN_TRAM.md # Mid-project progress report
+|-- README.md
 ```
 
 ---
@@ -122,7 +138,7 @@ Balance_robot/
 - JWT-based authentication
 - robot management per user account
 - real-time MQTT communication
-- monitoring of angle, speed, and sensor data
+- telemetry persistence through `robot/state/full/{deviceId}`
 - multiple robot control modes
 - PID tuning with backend sync per robot
 - local cache fallback when the backend is temporarily unavailable
@@ -146,7 +162,16 @@ flutter pub get
 flutter run
 ```
 
-### 3. Configure the server address
+### 3. Build and flash the firmware
+
+```bash
+cd d:\Balance_robot\Iot_robot
+idf.py set-target esp32
+idf.py menuconfig
+idf.py build flash monitor
+```
+
+### 4. Configure the server address
 
 When running the app on a physical phone, enter `Server IP / Host` as the LAN IP address of the machine running the backend.
 If you use an Android emulator, you can use `10.0.2.2`.
@@ -163,13 +188,17 @@ If you use an Android emulator, you can use `10.0.2.2`.
 - `POST /api/devices`
 - `GET /api/devices/{deviceId}/pid`
 - `PUT /api/devices/{deviceId}/pid`
+- `GET /api/telemetry/{deviceId}/latest`
+- `GET /api/events/{deviceId}`
 
 ### MQTT Topics
 
 - `robot/state/angle/{deviceId}`
 - `robot/state/speed/{deviceId}`
 - `robot/state/sensors/{deviceId}`
+- `robot/state/full/{deviceId}`
 - `robot/heartbeat/{deviceId}`
+- `robot/event/{deviceId}`
 - `robot/control/move/{deviceId}`
 - `robot/pid/angle/{deviceId}`
 - `robot/pid/speed/{deviceId}`
@@ -179,7 +208,6 @@ If you use an Android emulator, you can use `10.0.2.2`.
 ## Related Documents
 
 - [TESTING_GUIDE.md](./TESTING_GUIDE.md)
-- [BAO_CAO_50_PHAN_TRAM.md](./BAO_CAO_50_PHAN_TRAM.md)
 
 ---
 
@@ -187,4 +215,6 @@ If you use an Android emulator, you can use `10.0.2.2`.
 
 - The backend is the source of truth for PID values when it is reachable.
 - The app still keeps a local cache to avoid losing settings during temporary network issues.
+- `robot/state/full/{deviceId}` is the backend persistence topic for complete telemetry records.
+- `speed PID` is still synchronized through backend and mobile for compatibility, but the ESP32 v1 firmware does not use it in the control loop because the current hardware setup has no encoder.
 - The project is suitable for IoT demos, balancing-control research, or as a base for a small autonomous robot platform.

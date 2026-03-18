@@ -1,0 +1,168 @@
+menu "Balance Robot Firmware"
+
+config BALANCE_ROBOT_DEVICE_ID
+    string "Device ID"
+    default "ROBOT_01"
+
+config BALANCE_ROBOT_WIFI_SSID
+    string "Wi-Fi SSID"
+    default "Xiaomi 14"
+
+config BALANCE_ROBOT_WIFI_PASSWORD
+    string "Wi-Fi password"
+    default "19052004"
+
+config BALANCE_ROBOT_MQTT_HOST
+    string "MQTT broker host"
+    default "10.235.155.125"
+
+config BALANCE_ROBOT_MQTT_PORT
+    int "MQTT broker port"
+    range 1 65535
+    default 1883
+
+config BALANCE_ROBOT_SDA_PIN
+    int "MPU6050 SDA pin"
+    default 19
+
+config BALANCE_ROBOT_SCL_PIN
+    int "MPU6050 SCL pin"
+    default 18
+
+config BALANCE_ROBOT_LEFT_STEP_PIN
+    int "Left motor STEP pin"
+    default 26
+
+config BALANCE_ROBOT_LEFT_DIR_PIN
+    int "Left motor DIR pin"
+    default 25
+
+config BALANCE_ROBOT_RIGHT_STEP_PIN
+    int "Right motor STEP pin"
+    default 33
+
+config BALANCE_ROBOT_RIGHT_DIR_PIN
+    int "Right motor DIR pin"
+    default 32
+
+config BALANCE_ROBOT_ENABLE_PIN
+    int "Motor ENABLE pin"
+    default 27
+
+config BALANCE_ROBOT_CONTROL_LOOP_HZ
+    int "Control loop frequency (Hz)"
+    range 50 500
+    default 200
+
+config BALANCE_ROBOT_TELEMETRY_HZ
+    int "Telemetry publish frequency (Hz)"
+    range 1 50
+    default 10
+
+config BALANCE_ROBOT_HEARTBEAT_HZ
+    int "Heartbeat frequency (Hz)"
+    range 1 5
+    default 1
+
+config BALANCE_ROBOT_COMMAND_TIMEOUT_MS
+    int "Command timeout (ms)"
+    range 100 5000
+    default 500
+
+config BALANCE_ROBOT_IMU_ALPHA_X1000
+    int "Complementary filter alpha x1000"
+    range 900 999
+    default 980
+
+config BALANCE_ROBOT_MAX_TILT_DEG
+    int "Safety tilt limit (deg)"
+    range 10 60
+    default 35
+
+config BALANCE_ROBOT_REARM_TILT_DEG
+    int "Rearm tilt threshold (deg)"
+    range 1 20
+    default 10
+
+config BALANCE_ROBOT_REARM_HOLD_MS
+    int "Rearm hold duration (ms)"
+    range 100 5000
+    default 1000
+
+config BALANCE_ROBOT_TARGET_ANGLE_LIMIT_DEG
+    int "Target angle limit (deg)"
+    range 1 20
+    default 8
+
+config BALANCE_ROBOT_BALANCE_TRIM_X10
+    int "Balance trim x10 (deg)"
+    range -150 150
+    default 0
+
+config BALANCE_ROBOT_USE_ROLL_FOR_BALANCE
+    bool "Use roll axis for balance"
+    default n
+
+config BALANCE_ROBOT_INVERT_BALANCE_SIGN
+    bool "Invert balance angle sign"
+    default n
+
+config BALANCE_ROBOT_INVERT_LEFT_MOTOR
+    bool "Invert left motor direction"
+    default n
+
+config BALANCE_ROBOT_INVERT_RIGHT_MOTOR
+    bool "Invert right motor direction"
+    default n
+
+config BALANCE_ROBOT_TURN_BIAS_LIMIT_X100
+    int "Turn bias limit x100"
+    range 1 100
+    default 25
+
+config BALANCE_ROBOT_PID_OUTPUT_LIMIT
+    int "PID output limit"
+    range 10 500
+    default 100
+
+config BALANCE_ROBOT_DEFAULT_ANGLE_P_X10
+    int "Default angle P x10"
+    range 1 1000
+    default 150
+
+config BALANCE_ROBOT_DEFAULT_ANGLE_I_X10
+    int "Default angle I x10"
+    range 0 100
+    default 5
+
+config BALANCE_ROBOT_DEFAULT_ANGLE_D_X10
+    int "Default angle D x10"
+    range 0 500
+    default 80
+
+config BALANCE_ROBOT_DEFAULT_SPEED_P_X10
+    int "Default speed P x10"
+    range 0 500
+    default 100
+
+config BALANCE_ROBOT_DEFAULT_SPEED_I_X10
+    int "Default speed I x10"
+    range 0 100
+    default 3
+
+config BALANCE_ROBOT_DEFAULT_SPEED_D_X10
+    int "Default speed D x10"
+    range 0 500
+    default 50
+
+config BALANCE_ROBOT_MOTOR_MIN_FREQ_HZ
+    int "Minimum motor step frequency"
+    range 1 500
+    default 80
+
+config BALANCE_ROBOT_MOTOR_MAX_FREQ_HZ
+    int "Maximum motor step frequency"
+    range 200 10000
+    default 1800
+
+endmenu

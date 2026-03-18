@@ -35,6 +35,9 @@ mqtt:
     state-angle: robot/state/angle
     state-sensors: robot/state/sensors
     state-speed: robot/state/speed
+    state-full: robot/state/full
+    heartbeat: robot/heartbeat
+    device-event: robot/event
     pid-angle: robot/pid/angle
     pid-speed: robot/pid/speed
     control-move: robot/control/move

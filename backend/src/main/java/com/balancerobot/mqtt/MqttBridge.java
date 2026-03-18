@@ -38,6 +38,24 @@ public class MqttBridge implements MqttCallback {
     @Value("${mqtt.client.id}")
     private String clientId;
 
+    @Value("${mqtt.topics.state-angle}")
+    private String stateAngleTopic;
+
+    @Value("${mqtt.topics.state-sensors}")
+    private String stateSensorsTopic;
+
+    @Value("${mqtt.topics.state-speed}")
+    private String stateSpeedTopic;
+
+    @Value("${mqtt.topics.state-full}")
+    private String stateFullTopic;
+
+    @Value("${mqtt.topics.heartbeat}")
+    private String heartbeatTopic;
+
+    @Value("${mqtt.topics.device-event}")
+    private String deviceEventTopic;
+
     private MqttClient client;
     private static final int MAX_RETRY = 5;
     private static final long RETRY_DELAY_MS = 3000;
@@ -90,9 +108,12 @@ public class MqttBridge implements MqttCallback {
         client.setCallback(this);
         client.connect(opts);
 
-        // Subscribe to all robot state topics
-        client.subscribe("robot/state/#", 0);
-        client.subscribe("robot/heartbeat/#", 0);
+        client.subscribe(stateAngleTopic + "/#", 0);
+        client.subscribe(stateSensorsTopic + "/#", 0);
+        client.subscribe(stateSpeedTopic + "/#", 0);
+        client.subscribe(stateFullTopic + "/#", 0);
+        client.subscribe(heartbeatTopic + "/#", 0);
+        client.subscribe(deviceEventTopic + "/#", 0);
 
         // Provide client to publish service
         publishService.setMqttClient(client);
@@ -118,11 +139,10 @@ public class MqttBridge implements MqttCallback {
     public void messageArrived(String topic, MqttMessage message) {
         try {
             String payload = new String(message.getPayload());
-            JsonNode json = objectMapper.readTree(payload);
+            JsonNode json = payload.isBlank() ? objectMapper.createObjectNode() : objectMapper.readTree(payload);
 
-            // Extract device ID from topic or payload
             String deviceIdStr = extractDeviceId(topic, json);
-            if (deviceIdStr == null)
+            if (deviceIdStr == null || deviceIdStr.isBlank())
                 return;
 
             Optional<Device> deviceOpt = deviceRepo.findByDeviceId(deviceIdStr);
@@ -130,31 +150,18 @@ public class MqttBridge implements MqttCallback {
                 return;
 
             Device device = deviceOpt.get();
+            refreshDevicePresence(device);
 
-            // Update last seen
-            device.setLastSeen(LocalDateTime.now());
-            if (!"ONLINE".equals(device.getStatus())) {
-                device.setStatus("ONLINE");
-                eventRepo.save(DeviceEvent.builder()
-                        .device(device).eventType("CONNECTED")
-                        .description("Device came online").build());
-            }
-            deviceRepo.save(device);
-
-            // Process by topic
-            if (topic.contains("state/angle")) {
+            if (topicMatches(topic, stateFullTopic)) {
                 Double angle = getDouble(json, "angle");
-                telemetryService.saveTelemetry(device, angle, null, null, null, null);
-            } else if (topic.contains("state/speed")) {
                 Double speed = getDouble(json, "speed");
-                telemetryService.saveTelemetry(device, null, speed, null, null, null);
-            } else if (topic.contains("state/sensors")) {
                 Double x = getDouble(json, "x");
                 Double y = getDouble(json, "y");
                 Double z = getDouble(json, "z");
-                telemetryService.saveTelemetry(device, null, null, x, y, z);
-            } else if (topic.contains("heartbeat")) {
-                // Just the lastSeen update above is enough
+                telemetryService.saveTelemetry(device, angle, speed, x, y, z);
+            } else if (topicMatches(topic, deviceEventTopic)) {
+                persistDeviceEvent(device, json);
+            } else if (topicMatches(topic, heartbeatTopic)) {
                 log.debug("Heartbeat from {}", deviceIdStr);
             }
 
@@ -215,20 +222,52 @@ public class MqttBridge implements MqttCallback {
     }
 
     private String extractDeviceId(String topic, JsonNode json) {
-        // Try from JSON payload first
         if (json.has("deviceId")) {
             return json.get("deviceId").asText();
         }
-        // Try from topic: robot/state/angle/DEVICE_ID
         String[] parts = topic.split("/");
-        if (parts.length >= 4) {
-            return parts[3];
+        if (parts.length >= 3) {
+            return parts[parts.length - 1];
         }
-        // Fallback
         return null;
     }
 
     private Double getDouble(JsonNode json, String field) {
         return json.has(field) ? json.get(field).asDouble() : null;
+    }
+
+    private String getText(JsonNode json, String field) {
+        return json.has(field) ? json.get(field).asText() : null;
+    }
+
+    private boolean topicMatches(String topic, String baseTopic) {
+        return topic.equals(baseTopic) || topic.startsWith(baseTopic + "/");
+    }
+
+    private void refreshDevicePresence(Device device) {
+        device.setLastSeen(LocalDateTime.now());
+        if (!"ONLINE".equals(device.getStatus())) {
+            device.setStatus("ONLINE");
+            eventRepo.save(DeviceEvent.builder()
+                    .device(device)
+                    .eventType("CONNECTED")
+                    .description("Device came online")
+                    .build());
+        }
+        deviceRepo.save(device);
+    }
+
+    private void persistDeviceEvent(Device device, JsonNode json) {
+        String eventType = getText(json, "eventType");
+        if (eventType == null || eventType.isBlank()) {
+            return;
+        }
+
+        String description = getText(json, "description");
+        eventRepo.save(DeviceEvent.builder()
+                .device(device)
+                .eventType(eventType)
+                .description(description)
+                .build());
     }
 }
